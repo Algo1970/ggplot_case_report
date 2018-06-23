@@ -1,0 +1,189 @@
+---
+title: "シンプルな臨床経過図を、簡単に作成する"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_section: true
+---
+
+
+## はじめに
+
+研修医の頃によく、学会発表の症例報告で経過図をパワポで作成しました。カンファレンスでも経過図使ったりするこがあるかもしれません。
+
+通常、バイタルデータや血液データをエクセルでプロットし、グラフを並べて配置。グラフの上には使用した薬剤の経過を図示して、プレゼンすることが多いかと思います。
+もちろんこだわりの経過図ができると満足感はありますが、だいたい何年も作っていると似たような経過図が多くなりますし、自分の好きは配色や配置も決まっています。繰り返される作業の割には、ほとんどの方は、学会やカンファのために一から作る作業を繰り返しているのではないでしょうか？
+そこで、あまりこだわる必要の無い経過図は、なるべく自動化したいというのが今回のブログです。
+
+## サンプルデータセットの読み込み
+
+体重データセット
+```{r }
+library(dplyr)
+BW_df = read.csv("BW_dataset.csv")
+BW_df$date = as.Date(BW_df$date)
+print(BW_df)
+BW_df %>% str()
+```
+
+肝機能データセット
+```{r }
+ALT_df = read.csv("ALT_dataset.csv")
+ALT_df$date = as.Date(ALT_df$date)
+print(ALT_df)
+```
+薬剤データセット
+```{r}
+drug_name = c("linagliptin(Trazenta)", "sitagliptin(Januvia)", "glimepiride(Amaryl)", "tofoglifozin(Apleway)")
+drug_name = c("Linagliptin", "Sitagliptin", "Glimepiride", "Tofoglifozin")
+value = c(1,1,2,3)
+start_date = c("2013-04-23", "2013-10-29", "2014-02-12", "2015-08-27")
+end_date   = c("2013-10-28", "2015-08-26", "2018-06-20", "2018-06-20")
+df = data.frame(drug_name, value, start_date, end_date)
+print(df)
+```
+
+データセットの整形
+```{r}
+df2 = tidyr::gather(df, key="category", value = "date", start_date, end_date)
+df2$date = as.Date(df2$date)
+df2
+```
+
+
+## サンプルデータのプロット　
+
+体重のプロット
+
+```{r}
+library(ggplot2)
+ggplot() + geom_line(data = BW_df, aes(date, BW))
+ggplot() + geom_line(data = BW_df, aes(date, BW)) + labs(x = "", y= "", title = "")
+ggplot() + 
+  geom_line(data = BW_df, aes(date, BW)) + 
+  labs(x = "", y= "", title = "") +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank()) 
+ggplot(BW_df, aes(date, BW)) + 
+  geom_line(color = "black", size = 3, alpha = 0.5) + 
+  geom_point(color = "black", size = 3.5, alpha = 0.2) +
+  geom_text(aes(label = BW), color="black", size = 6, check_overlap = T) +
+  labs(x = "", y= "", title = "BW") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())  +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+```
+
+
+
+```{r}
+ggplot() +
+  geom_line(data = BW_df, aes(date, BW), color = "orange", size = 3, alpha = 0.7) +
+  geom_point(data = BW_df, aes(date, BW), color = "orange", size = 3.5, alpha = 0.7) +
+  labs(x = "", y= "BW", title = "") +
+  theme_minimal() + theme(axis.title.y = element_text(size = 15)) +
+  theme(axis.text.x = element_blank()) + theme(axis.text.y = element_text(size = 15)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+肝機能のプロット
+```{r}
+ggplot() +
+  geom_line(data = ALT_df, aes(date, ALT), color = "darkblue", size = 3, alpha = 0.7) +
+  geom_point(data = ALT_df, aes(date, ALT), color = "darkblue", size = 3.5, alpha = 0.7) +
+  labs(x = "", y= "ALT", title = "") +
+  theme_minimal() + theme(axis.title.y = element_text(size = 15)) +
+  theme(axis.text.x = element_text(size = 15)) + theme(axis.text.y = element_text(size = 15)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+ggplot(ALT_df, aes(date, ALT)) + 
+  geom_line(color = "black", size = 3, alpha = 0.5) + 
+  geom_point(color = "black", size = 3.5, alpha = 0.2) +
+  geom_text(aes(label = ALT), color="black", size = 6, check_overlap = T) +
+  labs(x = "", y= "", title = "ALT") +
+  theme_minimal() +
+  theme(axis.text.y = element_blank()) + theme(axis.text.x = element_text(size = 15)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+```
+
+薬剤データセットのプロット
+```{r}
+ggplot(df2, aes(x=date, y=drug_name, colour = drug_name )) + 
+  geom_line(size=10, alpha = 0.7) +
+  xlab("") + ylab("") +
+  theme_minimal() + 
+  # theme(axis.text.x = element_blank()) + theme(axis.text.y = element_blank()) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())  +
+  scale_colour_discrete(guide=FALSE) + 
+  geom_text(aes(label = drug_name), color="black", size = 6, check_overlap = T)
+
+ggplot(df2, aes(x=date, y=drug_name)) + 
+  geom_line(size=10, alpha = 0.4) +
+  labs(x = "", y= "", title = "Drug") +
+  # xlab("") + ylab("") +
+  theme_minimal() + 
+  # theme(axis.text.x = element_blank()) + theme(axis.text.y = element_blank()) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())  +
+  scale_colour_discrete(guide=FALSE) + 
+  geom_text(aes(label = drug_name), color="black", size = 6, check_overlap = T)
+
+
+
+
+```
+
+## プロットの結合
+
+最下段のプロットのみ、x軸のラベルを表示
+```{r}
+library(gridExtra)
+p1 = ggplot(df2, aes(x=date, y=drug_name)) + 
+  geom_line(size=10, alpha = 0.4) +
+  labs(x = "", y= "", title = "Drug") +
+  theme_minimal() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())  +
+  scale_colour_discrete(guide=FALSE) + 
+  geom_text(aes(label = drug_name), color="black", size = 6, check_overlap = T)
+
+p2 = ggplot(BW_df, aes(date, BW)) + 
+  geom_line(color = "black", size = 3, alpha = 0.5) + 
+  geom_point(color = "black", size = 3.5, alpha = 0.2) +
+  geom_text(aes(label = BW), color="black", size = 6, check_overlap = T) +
+  labs(x = "", y= "", title = "BW") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())  +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+p3 =ggplot(ALT_df, aes(date, ALT)) + 
+  geom_line(color = "black", size = 3, alpha = 0.5) + 
+  geom_point(color = "black", size = 3.5, alpha = 0.2) +
+  geom_text(aes(label = ALT), color="black", size = 6, check_overlap = T) +
+  labs(x = "", y= "", title = "ALT") +
+  theme_minimal() +
+  theme(axis.text.y = element_blank()) + theme(axis.text.x = element_text(size = 15)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+grid.arrange(p1, p2, p3, layout_matrix = matrix(1:3, nrow=3))
+
+
+```
+
+
+
+## ポイント
+
+- ｙ軸ラベルの文字幅でプロット位置がずれるので、ｙ軸ラベルの削除
+- 複数プロットを並べるため、ｘ軸の最小値と最大値をそろえる
+- ｘ軸をそろえた場合、重複するｘ軸のタイトル、ラベルは削除
+- スライドに貼り付けたとき、視認性が良いようにラインの太さ、ラベル文字サイズを調節
+
+## 問題点
+
+- 薬剤名のラベルが左右に出力されるため、両端が切れる場合がある
+- geom_textで数値を出力するとbusyなプロットで見にくい
+

@@ -3,6 +3,12 @@ library(ggplot2)
 library(gridExtra)
 library(reshape2)
 
+##
+library(RCurl)
+url <- getURL("https://raw.githubusercontent.com/Algo1970/EHR_data/master/drug_dataset.csv")
+x1 <- read.csv(text = url, header = TRUE)
+x1
+
 BW_df = read.csv("BW_dataset.csv")
 BW_df$date = as.Date(BW_df$date)
 print(BW_df)
@@ -65,6 +71,16 @@ start_date = c("2013-04-23", "2013-10-29", "2014-02-12", "2015-08-27")
 end_date   = c("2013-10-28", "2015-08-26", "2018-06-20", "2018-06-20")
 df = data.frame(drug_name, value, start_date, end_date)
 df
+
+drug_name = c("Linagliptin", "Sitagliptin", "Glimepiride", "Tofoglifozin")
+# value = c(1,1,2,3)
+value = c("DPP-4","DPP-4","SU","SGLT2")
+start_date = c("2012-02-20", "2012-10-21", "2014-08-10", "2015-12-27")
+end_date   = c("2012-10-20", "2015-12-20", "2018-06-20", "2018-06-20")
+df = data.frame(drug_name, value, start_date, end_date)
+# df = data.frame(drug_name, start_date, end_date)
+df
+
 
 df2 = tidyr::gather(df, key="category", value = "date", start_date, end_date)
 df2$date = as.Date(df2$date)
